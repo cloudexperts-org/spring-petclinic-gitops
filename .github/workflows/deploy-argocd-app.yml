@@ -1,0 +1,51 @@
+
+
+name: Deploy ArgoCD Application
+
+on:
+  push:
+    branches:
+      - main  # Run when changes are pushed to main branch
+
+jobs:
+  deploy-argocd-app:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout GitOps repo (containing argocd-app.yaml)
+      - name: Checkout GitOps repo
+        uses: actions/checkout@v3
+
+      # Configure AWS credentials to access EKS
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-southeast-1
+
+      # Update kubeconfig for EKS cluster
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --name my-eks-cluster --region ap-southeast-1
+
+      # Install Argo CD CLI (optional if you want CLI commands)
+      - name: Install Argo CD CLI
+        run: |
+          curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          chmod +x /usr/local/bin/argocd
+
+      # Apply the Argo CD Application manifest using kubectl
+      - name: Deploy Argo CD Application
+        run: |
+          kubectl apply -f argocd-app.yaml -n argocd
+
+      # Optional: Trigger Argo CD sync using CLI
+      - name: Sync Argo CD Application
+        env:
+          ARGOCD_SERVER: <ARGOCD_SERVER_URL>      # Example: argocd.example.com
+          ARGOCD_USERNAME: admin
+          ARGOCD_PASSWORD: ${{ secrets.ARGOCD_ADMIN_PASSWORD }}
+        run: |
+          argocd login $ARGOCD_SERVER --username $ARGOCD_USERNAME --password $ARGOCD_PASSWORD --insecure
+          argocd app sync spring-petclinic
