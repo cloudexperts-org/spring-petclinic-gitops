@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
         - name: spring-petclinic
-          image: cloudexperts/spring-petclinic:latest
+          image: cloudexperts/spring-petclinic:f6de71d2b85bd17ae5eb7a6558ad3d2bb2387172
           ports:
             - containerPort: 8080
